@@ -41,7 +41,6 @@ public class DataUploader {
 	 * @return
 	 */
 	private static ArrayList<String> cleanseWeatherData(ArrayList<String> weatherData){
-		ArrayList<String> cleansedWeatherData = new ArrayList<String>();
 		for(int i = 0; i < weatherData.size(); i++) {
 			String[] old = weatherData.get(i).split(",");
 			String current;
@@ -82,13 +81,17 @@ public class DataUploader {
 			for(int j = 1; j < old.length; j++) {
 				current = current + "," + old[j];
 			}
-			cleansedWeatherData.add(current);
+			weatherData.set(i, current);
 		}
 		
-		return cleansedWeatherData;
+		return weatherData;
 	}
 	
-	
+	/**
+	 * Retrieves the weather data from given csv files.
+	 * The weather data files have quotations in them for some reason so they are removed as part of the process.
+	 * @return
+	 */
 	private static ArrayList<String> getWeatherData(){
 		ArrayList<String> weatherData = new ArrayList<String>();
 		String inputLine;
@@ -96,10 +99,10 @@ public class DataUploader {
 			BufferedReader inputMobile = new BufferedReader(new FileReader(TORONTO_WEATHER_FILE));
 			inputLine = inputMobile.readLine();
 			while((inputLine = inputMobile.readLine()) != null) {
-			
-			
-					weatherData.add(inputLine);
-				
+				//I have no idea why but the raw csv stores the values in quotations
+				//There for it is nessasarry to remove all quotations
+				inputLine = removeQuotations(inputLine);
+				weatherData.add(inputLine);	
 			}
 			inputMobile.close();
 		} catch (FileNotFoundException e) {
@@ -111,9 +114,8 @@ public class DataUploader {
 			BufferedReader inputMobile = new BufferedReader(new FileReader(OTTAWA_WEATHER_FILE));
 			inputLine = inputMobile.readLine();
 			while((inputLine = inputMobile.readLine()) != null) {
-				
-					weatherData.add(inputLine);
-				
+				inputLine = removeQuotations(inputLine);
+				weatherData.add(inputLine);
 			}
 			inputMobile.close();
 		} catch (FileNotFoundException e) {
@@ -124,6 +126,19 @@ public class DataUploader {
 		return weatherData;
 	}
 	
+	/**
+	 * Removes quotations from given string
+	 * @param input
+	 * @return
+	 */
+	private static String removeQuotations(String input) {
+		String[] segments = input.split("\"");
+		String output = "";
+		for(int i = 0; i < segments.length; i++) {
+			output += segments[i];
+		}
+		return output;
+	}
 	/**
 	 * Separates the relevant mobility data from the file.
 	 * @return
