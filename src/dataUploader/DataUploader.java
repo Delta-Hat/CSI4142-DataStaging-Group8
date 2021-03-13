@@ -5,6 +5,17 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+/**
+ * A reasonable person might look at this code and ask a whole bunch of questions.
+ * Everything in this file is only useful for our data science project and, if were to be
+ * used in any other context, would have to be heavily modified.
+ * 
+ * This class only serves the purpose of extracting the specific given files and uploading it to an
+ * SQL database.
+ * 
+ * @author sean
+ *
+ */
 public class DataUploader {
 	final static String COVID_PATIENT_FILE = "conposcovidloc.csv";
 	final static String TORONTO_WEATHER_FILE = "en_climate_daily_ON_6158355_2020_P1D.csv";
@@ -27,15 +38,52 @@ public class DataUploader {
 		
 		weatherData = cleanseWeatherData(weatherData);
 		
-		for(String line : weatherData) {
-			System.out.println(line);
+		//for(String line : weatherData) {
+		//	System.out.println(line);
+		//}
+		
+		ArrayList<String> patientData = getPatientData();
+		
+		
+		//for(String line : patientData) {
+		//	System.out.println(line);
+		//}
+		
+	}
+	
+	/**
+	 * Extracts the patient data from the file.
+	 * Thankfully, there doesn't seem to be anything that requires omission.
+	 * 
+	 * In a heavier duty operation, loading an entire data source into the RAM of a personal computer
+	 * would be a bad idea. Thankfully, since I can open the CSV in Excel, loading the whole file into an
+	 * ArrayList is *probably* not a huge problem.
+	 * 
+	 * Printing the whole file to the console does take time, however.
+	 * @return
+	 */
+	private static ArrayList<String> getPatientData(){
+		ArrayList<String> patientData = new ArrayList<String>();
+		String inputLine;
+		try {
+			BufferedReader inputPatient = new BufferedReader(new FileReader(COVID_PATIENT_FILE));
+			inputLine = inputPatient.readLine();//removes the header lines.
+			while((inputLine = inputPatient.readLine()) != null) {
+				patientData.add(inputLine);
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+		return patientData;
 	}
 	
 	/**
 	 * This only works if the first and last data are complete.
 	 * Our current data source is as such.
 	 * 
+	 * Missing weather data cannot be omitted which is why we clean it like this.
 	 * 
 	 * @param weatherData
 	 * @return
@@ -141,6 +189,8 @@ public class DataUploader {
 	}
 	/**
 	 * Separates the relevant mobility data from the file.
+	 * The file contains a bunch of mobility data we do not need.
+	 * Therefore, only the mobility data in Ottawa and Toronto are extracted.
 	 * @return
 	 */
 	private static ArrayList<String> getMobilityData(){
