@@ -33,6 +33,22 @@ public class SpecialMeasures implements Serializable {
 			this.setStartDay(startDay);
 			this.setEndDay(endDay);
 		}
+		
+		public String toString() {
+			String output = "SpecialMeasures[";
+			output += Integer.toString(getSpecialMeasuresKey()) + ",";
+			output += getTitle() + ",";
+			output += getDescription() + ",";
+			output += getKeyword1() + ",";
+			output += getKeyword2() + ",";
+			output += Integer.toString(getStartYear()) + ",";
+			output += Integer.toString(getEndYear()) + ",";
+			output += Integer.toString(getStartMonth()) + ",";
+			output += Integer.toString(getEndMonth()) + ",";
+			output += Integer.toString(getStartDay()) + ",";
+			output += Integer.toString(getEndDay()) + "]";
+			return output;
+		}
 
 		public int getSpecialMeasuresKey() {
 			return specialMeasuresKey;

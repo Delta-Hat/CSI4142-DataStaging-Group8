@@ -19,6 +19,15 @@ public class Weather implements Serializable {
 		this.setDailyLowTemperature(dailyLowTemperature);
 		this.setPercipitation(percipitation);
 	}
+	
+	public String toString() {
+		String output = "Weather[";
+		output += Integer.toString(getWeatherKey()) + ",";
+		output += Double.toString(getDailyHighTemperature()) + ",";
+		output += Double.toString(getDailyLowTemperature()) + ",";
+		output += Boolean.toString(isPercipitation()) + "]";
+		return output;
+	}
 
 	public int getWeatherKey() {
 		return weatherKey;

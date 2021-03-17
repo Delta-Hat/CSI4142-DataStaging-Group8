@@ -22,12 +22,25 @@ public class ReportedDate implements Serializable{
 	private String season;
 	
 	public ReportedDate(int reportedDateKey, int day, int month, String dayOfWeek, boolean weekend, boolean holiday, String season) {
+		this.setReportedDateKey(reportedDateKey);
 		this.setDay(day);
 		this.setMonth(month);
 		this.setDayOfWeek(dayOfWeek);
 		this.setWeekend(weekend);
 		this.setHoliday(holiday);
 		this.setSeason(season);
+	}
+	
+	public String toString() {
+		String output = "ReportedDate[";
+		output += Integer.toString(reportedDateKey) + ",";
+		output += Integer.toString(day) + ",";
+		output += Integer.toString(month) + ",";
+		output += dayOfWeek + ",";
+		output += Boolean.toString(weekend) + ",";
+		output += Boolean.toString(holiday) + ",";
+		output += season + "]";
+		return output;
 	}
 	
 	public ReportedDate() {

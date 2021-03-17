@@ -21,6 +21,7 @@ public class OnsetDate implements Serializable{
 	private String season;
 	
 	public OnsetDate(int onsetDateKey, int day, int month, String dayOfWeek, boolean weekend, boolean holiday, String season) {
+		this.setOnsetDateKey(onsetDateKey);
 		this.setDay(day);
 		this.setMonth(month);
 		this.setDayOfWeek(dayOfWeek);
@@ -31,6 +32,18 @@ public class OnsetDate implements Serializable{
 	
 	public OnsetDate() {
 		
+	}
+	
+	public String toString() {
+		String output = "OnsetDate[";
+		output += Integer.toString(onsetDateKey) + ",";
+		output += Integer.toString(day) + ",";
+		output += Integer.toString(month) + ",";
+		output += dayOfWeek + ",";
+		output += Boolean.toString(weekend) + ",";
+		output += Boolean.toString(holiday) + ",";
+		output += season + "]";
+		return output;
 	}
 	
 	public int getOnsetDateKey() {

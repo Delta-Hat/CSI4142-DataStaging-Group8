@@ -9,7 +9,6 @@ public class Mobility implements Serializable {
 	 */
 	private static final long serialVersionUID = 1790653335786054032L;
 	private int mobilityKey;
-	private String metroArea;
 	private String subRegion;
 	private String province;
 	private int retailAndRecreation;
@@ -19,9 +18,8 @@ public class Mobility implements Serializable {
 	private int workplaces;
 	private int residential;
 	
-	public Mobility(int mobilityKey, String metroArea, String subRegion, String province, int retailAndRecreation, int groceryAndPharmacy, int parks, int transitStations, int workplaces, int residential) {
+	public Mobility(int mobilityKey, String subRegion, String province, int retailAndRecreation, int groceryAndPharmacy, int parks, int transitStations, int workplaces, int residential) {
 		this.mobilityKey = mobilityKey;
-		this.metroArea = metroArea;
 		this.subRegion = subRegion;
 		this.province = province;
 		this.retailAndRecreation = retailAndRecreation;
@@ -31,6 +29,20 @@ public class Mobility implements Serializable {
 		this.workplaces = workplaces;
 		this.residential = residential;
 	}
+	
+	public String toString() {
+		String output = "Mobility[";
+		output += Integer.toString(getMobilityKey()) + ",";
+		output += getSubRegion() + ",";
+		output += getProvince() + ",";
+		output += Integer.toString(getRetailAndRecreation()) + ",";
+		output += Integer.toString(getGroceryAndPharmacy()) + ",";
+		output += Integer.toString(getParks()) + ",";
+		output += Integer.toString(getTransitStations()) + ",";
+		output += Integer.toString(getWorkplaces()) + ",";
+		output += Integer.toString(getResidential()) + "]";
+		return output;
+	}
 
 	public int getMobilityKey() {
 		return mobilityKey;
@@ -38,14 +50,6 @@ public class Mobility implements Serializable {
 
 	public void setMobilityKey(int mobilityKey) {
 		this.mobilityKey = mobilityKey;
-	}
-
-	public String getMetroArea() {
-		return metroArea;
-	}
-
-	public void setMetroArea(String metroArea) {
-		this.metroArea = metroArea;
 	}
 
 	public String getSubRegion() {

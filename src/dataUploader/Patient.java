@@ -22,6 +22,16 @@ public class Patient implements Serializable{
 		this.setAcquisitionGroup(acquisitionGroup);
 		this.setOutBreakRelated(outBreakRelated);
 	}
+	
+	public String toString() {
+		String output = "Patient[";
+		output += Integer.toString(getPatientKey()) + ",";
+		output += getGender() + ",";
+		output += getAgeGroup() + ",";
+		output += getAcquisitionGroup() + ",";
+		output += Boolean.toString(isOutBreakRelated()) + "]";
+		return output;
+	}
 
 	public int getPatientKey() {
 		return patientKey;

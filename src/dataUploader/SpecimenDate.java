@@ -17,6 +17,7 @@ public class SpecimenDate implements Serializable {
 	private String season;
 	
 	public SpecimenDate(int specimenDateKey, int day, int month, String dayOfWeek, boolean weekend, boolean holiday, String season) {
+		this.setSpecimenDateKey(specimenDateKey);
 		this.setDay(day);
 		this.setMonth(month);
 		this.setDayOfWeek(dayOfWeek);
@@ -27,6 +28,18 @@ public class SpecimenDate implements Serializable {
 	
 	public SpecimenDate() {
 		
+	}
+	
+	public String toString() {
+		String output = "Specimen[";
+		output += Integer.toString(specimenDateKey) + ",";
+		output += Integer.toString(day) + ",";
+		output += Integer.toString(month) + ",";
+		output += dayOfWeek + ",";
+		output += Boolean.toString(weekend) + ",";
+		output += Boolean.toString(holiday) + ",";
+		output += season + "]";
+		return output;
 	}
 	
 	public int getSpecimenDateKey() {

@@ -17,6 +17,7 @@ public class TestDate implements Serializable {
 	private String season;
 	
 	public TestDate(int testDateKey, int day, int month, String dayOfWeek, boolean weekend, boolean holiday, String season) {
+		this.setTestDateKey(testDateKey);
 		this.setDay(day);
 		this.setMonth(month);
 		this.setDayOfWeek(dayOfWeek);
@@ -27,6 +28,18 @@ public class TestDate implements Serializable {
 	
 	public TestDate() {
 		
+	}
+	
+	public String toString() {
+		String output = "TestDate[";
+		output += Integer.toString(testDateKey) + ",";
+		output += Integer.toString(day) + ",";
+		output += Integer.toString(month) + ",";
+		output += dayOfWeek + ",";
+		output += Boolean.toString(weekend) + ",";
+		output += Boolean.toString(holiday) + ",";
+		output += season + "]";
+		return output;
 	}
 	
 	public int getTestDateKey() {

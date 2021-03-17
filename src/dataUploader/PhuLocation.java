@@ -33,6 +33,20 @@ public class PhuLocation implements Serializable {
 	public PhuLocation() {
 		
 	}
+	
+	public String toString() {
+		String output = "PhuLocation[";
+		output += Integer.toString(getPhuLocationKey()) + ",";
+		output += getPhuName() + ",";
+		output += getAddress() + ",";
+		output += getCity() + ",";
+		output += getPostalCode() + ",";
+		output += getProvince() + ",";
+		output += getUrl() + ",";
+		output += Double.toString(getLatitude()) + ",";
+		output += Double.toString(getLongitude()) + "]";
+		return output;
+	}
 
 	public int getPhuLocationKey() {
 		return phuLocationKey;
