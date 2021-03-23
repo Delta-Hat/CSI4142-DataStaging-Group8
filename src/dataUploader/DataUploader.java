@@ -60,9 +60,9 @@ public class DataUploader {
 		
 
 		ArrayList<String> mobilityData = getMobilityData();
-		// for(String line : mobilityData) {
-		// System.out.println(line);
-		// }
+		for(String line : mobilityData) {
+		   System.out.println(line);
+		}
 
 		ArrayList<String> weatherData = getWeatherData();
 		
@@ -101,32 +101,32 @@ public class DataUploader {
 			
 		
 		
-		//for(DateDimension dateDimension : dateDimensionList) {
-		//	try {
-		//		uploadDateDimension(dateDimension,connection);
-		//	}catch(SQLException e) {
-		//		e.printStackTrace();
-		//		System.exit(0);
-		//	}
-		//}
+		for(DateDimension dateDimension : dateDimensionList) {
+			try {
+				uploadDateDimension(dateDimension,connection);
+			}catch(SQLException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
 		
-		//for(PhuLocation phuLocation : phuLocationList) {
-		//	try {
-		//		uploadPhuLocation(phuLocation,connection);	
-		//	}catch(SQLException e) {
-		//		e.printStackTrace();
-		//		System.exit(0);
-		//	}
-		//}
+		for(PhuLocation phuLocation : phuLocationList) {
+			try {
+				uploadPhuLocation(phuLocation,connection);	
+			}catch(SQLException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
 		
-		//for(Mobility mobility : mobilityList) {
-		//	try {
-		//		uploadMobility(mobility,connection);
-		//	}catch(SQLException e) {
-		//		e.printStackTrace();
-		//		System.exit(0);
-		//	}
-		//}
+		for(Mobility mobility : mobilityList) {
+			try {
+				uploadMobility(mobility,connection);
+			}catch(SQLException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
 		
 		for(Weather weather : weatherList) {
 			try {
