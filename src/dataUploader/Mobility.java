@@ -9,6 +9,8 @@ public class Mobility implements Serializable {
 	 */
 	private static final long serialVersionUID = 1790653335786054032L;
 	private int mobilityKey;
+	private int dateKey;
+	private int locationKey;
 	private String subRegion;
 	private String province;
 	private int retailAndRecreation;
@@ -17,6 +19,23 @@ public class Mobility implements Serializable {
 	private int transitStations;
 	private int workplaces;
 	private int residential;
+	
+	
+	
+	
+	public Mobility(int mobilityKey, String subRegion, String province, int retailAndRecreation, int groceryAndPharmacy, int parks, int transitStations, int workplaces, int residential, int dateKey, int locationKey) {
+		this.mobilityKey = mobilityKey;
+		this.subRegion = subRegion;
+		this.province = province;
+		this.retailAndRecreation = retailAndRecreation;
+		this.groceryAndPharmacy = groceryAndPharmacy;
+		this.parks = parks;
+		this.transitStations = transitStations;
+		this.workplaces = workplaces;
+		this.residential = residential;
+		this.dateKey = dateKey;
+		this.locationKey = locationKey;
+	}
 	
 	public Mobility(int mobilityKey, String subRegion, String province, int retailAndRecreation, int groceryAndPharmacy, int parks, int transitStations, int workplaces, int residential) {
 		this.mobilityKey = mobilityKey;
@@ -33,6 +52,7 @@ public class Mobility implements Serializable {
 	public String toString() {
 		String output = "Mobility[";
 		output += Integer.toString(getMobilityKey()) + ",";
+		output += Integer.toString(getDateKey()) + ",";
 		output += getSubRegion() + ",";
 		output += getProvince() + ",";
 		output += Integer.toString(getRetailAndRecreation()) + ",";
@@ -114,5 +134,21 @@ public class Mobility implements Serializable {
 
 	public void setResidential(int residential) {
 		this.residential = residential;
+	}
+
+	public int getDateKey() {
+		return dateKey;
+	}
+
+	public void setDateKey(int dateKey) {
+		this.dateKey = dateKey;
+	}
+
+	public int getLocationKey() {
+		return locationKey;
+	}
+
+	public void setLocationKey(int locationKey) {
+		this.locationKey = locationKey;
 	}
 }

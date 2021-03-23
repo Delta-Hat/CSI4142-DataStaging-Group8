@@ -46,6 +46,7 @@ public class DataUploader {
 	private int phuLocationKey = 1;
 	private int patientKey = 1;
 	private int specialMeasuresKey = 1;
+	private int dateNumber = 1;
 
 	public static void main(String[] args) {
 		if (args.length < 2) {
@@ -64,14 +65,115 @@ public class DataUploader {
 		// }
 
 		ArrayList<String> weatherData = getWeatherData();
+		
+		ArrayList<String> patientData = getPatientData();
 
 		weatherData = cleanseWeatherData(weatherData);
+		
+		ArrayList<DateDimension> dateDimensionList = generateDateDimension();
+		for(DateDimension dateDimension : dateDimensionList) {
+			System.out.println(dateDimension);
+		}
+		
+		ArrayList<PhuLocation> phuLocationList = generatePhuLocationDimension(patientData);
+		for(PhuLocation phuLocation : phuLocationList) {
+			System.out.println(phuLocation);
+		}
+		
+		ArrayList<Mobility> mobilityList = generateMobilityDimension(mobilityData, dateDimensionList, phuLocationList);
+		for(Mobility mobility : mobilityList) {
+			System.out.println(mobility);
+		}
+		
+		ArrayList<Weather> weatherList = generateWeatherDimension(weatherData, dateDimensionList, phuLocationList);
+		for(Weather weather : weatherList) {
+			System.out.println(weather);
+		}
+		
+		
+		ArrayList<Patient> patientList = new ArrayList<Patient>();
+		ArrayList<Fact> factList = generateFactDimension(patientData, dateDimensionList, mobilityList, weatherList, patientList, phuLocationList);
+		System.out.println("patientList size: " + patientList.size());
+		
+		
+		
+		try (Connection connection = getConnection(args)) {
+			
+		
+		
+		//for(DateDimension dateDimension : dateDimensionList) {
+		//	try {
+		//		uploadDateDimension(dateDimension,connection);
+		//	}catch(SQLException e) {
+		//		e.printStackTrace();
+		//		System.exit(0);
+		//	}
+		//}
+		
+		//for(PhuLocation phuLocation : phuLocationList) {
+		//	try {
+		//		uploadPhuLocation(phuLocation,connection);	
+		//	}catch(SQLException e) {
+		//		e.printStackTrace();
+		//		System.exit(0);
+		//	}
+		//}
+		
+		//for(Mobility mobility : mobilityList) {
+		//	try {
+		//		uploadMobility(mobility,connection);
+		//	}catch(SQLException e) {
+		//		e.printStackTrace();
+		//		System.exit(0);
+		//	}
+		//}
+		
+		for(Weather weather : weatherList) {
+			try {
+				uploadWeather(weather,connection);
+			}catch(SQLException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
+		
+		for(Patient patient : patientList) {
+			try {
+				uploadPatient(patient,connection);
+			}catch(SQLException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
+		
+		for(Fact fact : factList) {
+			try {
+				uploadFact(fact,connection);
+			}catch(SQLException e) {
+				e.printStackTrace();
+				System.exit(0);
+			}
+		}
+		
+		
+		connection.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.exit(0);
+		}
+		//ArrayList<Patient> patientList = generatePatientDimension(patientData);
+		//for(Patient patient : patientList) {
+		//	System.out.println(patient);
+		//}
+		
+		
+		
 
 		// for(String line : weatherData) {
 		// System.out.println(line);
 		// }
-
-		ArrayList<String> patientData = getPatientData();
+		/*
+		
 		ArrayList<Fact> factList = new ArrayList<Fact>();
 		for (String line : patientData) {
 			ReportedDate reportedDate = toReportedDate(line);
@@ -98,7 +200,9 @@ public class DataUploader {
 			System.out.println(fact);
 			factList.add(fact);
 		}
+		*/
 		
+		/*
 		try (Connection connection = getConnection(args)) {
 			int totalNulls = 0;
 			for(Fact fact : factList) {
@@ -110,7 +214,377 @@ public class DataUploader {
 			e.printStackTrace();
 			System.exit(0);
 		}
+		*/
 
+	}
+	
+	public ArrayList<Fact> generateFactDimension(ArrayList<String> patientData, ArrayList<DateDimension> dateList, ArrayList<Mobility> mobilityList, ArrayList<Weather> weatherList, ArrayList<Patient> patientList, ArrayList<PhuLocation> phuLocationList){
+		ArrayList<Fact> factList = new ArrayList<Fact>();
+		int missingReportedDates = 0;
+		int missingOnsetDates = 0;
+		int missingTestDates = 0;
+		int missingSpecimenDates = 0;
+		int missingPhuLocations = 0;
+		int missingWeathers = 0;
+		int skipedPatients = 0;
+		int recordedPatients = 0;
+		int missingMobility = 0;
+		for(String patientLine : patientData) {
+			int reportedDateKey;
+			int onsetDateKey;
+			int testDateKey;
+			int specimenDateKey;
+			int phuLocationKey;
+			boolean missing = false;
+			ReportedDate reportedDate;
+			
+			try {
+			reportedDate = toReportedDate(patientLine);
+			reportedDateKey = getDateIndex(reportedDate.getMonth(),reportedDate.getDay(),dateList);
+			} catch (NullPointerException e) {
+				reportedDateKey = 0;	
+			}
+			if(reportedDateKey == 0) {
+				missingReportedDates++;
+				missing = true;
+			}
+			try {
+			OnsetDate onsetDate = toOnsetDate(patientLine);
+			onsetDateKey = getDateIndex(onsetDate.getMonth(),onsetDate.getDay(),dateList);
+			} catch (NullPointerException e) {
+				onsetDateKey = 0;
+			}
+			if(onsetDateKey == 0) {
+				missingOnsetDates++;
+				missing = true;
+			}
+			try {
+			TestDate testDate = toTestDate(patientLine);
+			testDateKey = getDateIndex(testDate.getMonth(),testDate.getDay(),dateList);
+			} catch (NullPointerException e) {
+				testDateKey = 0;
+			}
+			if(testDateKey == 0) {
+				missingOnsetDates++;
+				missing = true;
+			}
+			try {
+			SpecimenDate specimenDate = toSpecimenDate(patientLine);
+			specimenDateKey = getDateIndex(specimenDate.getMonth(),specimenDate.getDay(),dateList);
+			} catch (NullPointerException e) {
+				specimenDateKey = 0;
+			}
+			if(specimenDateKey == 0) {
+				missingSpecimenDates++;
+				missing = true;
+			}
+			if(missing == true) {
+				skipedPatients++;
+				continue;
+			}
+			
+			try {
+			PhuLocation phuLocation = toPhuLocation(patientLine);
+			phuLocationKey = getPhuLocationIndex(phuLocation.getCity(), phuLocationList);
+			} catch (NullPointerException e) {
+				phuLocationKey = 0;
+				missingPhuLocations++;
+			}
+			int weatherKey = getWeatherIndex(reportedDateKey, phuLocationKey, weatherList);
+			if(weatherKey == 0) {
+				missingWeathers++;
+			}
+			Patient patient = toPatient(patientLine);
+			patientList.add(patient);
+			int patientKey = patient.getPatientKey();
+			int specialMeasuresKey = 0;
+			int mobilityKey = getMobilityKey(reportedDateKey, phuLocationKey, mobilityList);
+			if(mobilityKey == 0) {
+				missingMobility++;
+			}
+			String[] line = patientLine.split(",");
+			String status = line[8];
+			boolean resolved = "Resolved".equals(status);
+			boolean unresolved = "Not Resolved".equals(status);
+			boolean fatal = "Fatal".equals(status);
+			Fact fact = new Fact();
+			fact.resolved = resolved;
+			fact.unresolved = unresolved;
+			fact.fatal = fatal;
+			fact.onsetDateKey = onsetDateKey;
+			fact.reportedDateKey = reportedDateKey;
+			fact.testDateKey = testDateKey;
+			fact.specimenDateKey = specimenDateKey;
+			fact.phuLocationKey = phuLocationKey;
+			fact.weatherKey = weatherKey;
+			fact.patientKey = patientKey;
+			fact.mobilityKey = mobilityKey;
+			fact.specialMeasuresKey = 0;
+			System.out.println("" + onsetDateKey + "," + reportedDateKey + "," + testDateKey + "," + specimenDateKey + "," + phuLocationKey + "," + weatherKey + "," + patientKey + "," + mobilityKey);
+			recordedPatients++;
+			factList.add(fact);
+		}
+		System.out.println("Missing reported dates: " + missingReportedDates);
+		System.out.println("Missing onset dates: " + missingOnsetDates);
+		System.out.println("Missing test dates: " + missingTestDates);
+		System.out.println("Missing specimen dates: " + missingSpecimenDates);
+		System.out.println("Missing phu locations: " + missingPhuLocations);
+		System.out.println("Missing weathers: " + missingWeathers);
+		System.out.println("Missing mobility: " + missingMobility);
+		System.out.println("Skiped patients: " + skipedPatients);
+		System.out.println("Recorded patients: " + recordedPatients);
+		System.out.println("factList size: " + factList.size());
+		return factList;
+	}
+	
+	private int getMobilityKey(int dateKey, int locationKey, ArrayList<Mobility> mobilityList) {
+		for(Mobility mobility : mobilityList) {
+			if(mobility.getDateKey() == dateKey && mobility.getLocationKey() == locationKey) {
+				return mobility.getMobilityKey();
+			}
+		}
+		return 0;
+	}
+	
+	private int getWeatherIndex(int dateKey, int locationKey, ArrayList<Weather> weatherList) {
+		for(Weather weather : weatherList) {
+			if(weather.getDateKey() == dateKey && weather.getLocationKey() == locationKey) {
+				return weather.getWeatherKey();
+			}
+		}
+		return 0;
+	}
+	
+	private int getDateIndex(int month, int day, ArrayList<DateDimension> dateList) {
+		for(DateDimension date : dateList) {
+			if(date.getMonth() == month && date.getDay() == day) {
+				return date.getDateDimensionKey();
+			}
+		}
+		return 0;
+	}
+	
+	private int getPhuLocationIndex(String location, ArrayList<PhuLocation> phuLocationList) {
+		for(PhuLocation phuLocation : phuLocationList) {
+			if(phuLocation.getCity().equals(location)) {
+				return phuLocation.getPhuLocationKey();
+			}
+		}
+		return 0;
+	}
+	
+	public ArrayList<Patient> generatePatientDimension(ArrayList<String> patientData, ArrayList<DateDimension> dateList){
+		ArrayList<Patient> patientList = new ArrayList<Patient>();
+		for(String patientLine : patientData) {
+			Patient patient = toPatient(patientLine);
+			patientList.add(patient);
+		}
+		return patientList;
+	}
+	
+	public ArrayList<PhuLocation> generatePhuLocationDimension(ArrayList<String> patientData){
+		ArrayList<PhuLocation> phuLocationList = new ArrayList<PhuLocation>();
+		for(String patientLine : patientData) {
+			if(!inPhuLocationList(patientLine, phuLocationList)) {
+				phuLocationList.add(toPhuLocation(patientLine));
+			}
+		}
+		return phuLocationList;
+	}
+	
+	public ArrayList<Weather> generateWeatherDimension(ArrayList<String> weatherData, ArrayList<DateDimension> dateList, ArrayList<PhuLocation> phuLocationList){
+		ArrayList<Weather> weatherList = new ArrayList<Weather>();
+		for(DateDimension date : dateList) {
+			String weatherLine = getWeatherLineFromDateAndLocation(2020, date.getMonth(), date.getDay(), REPORTING_PHU_CITY_TORONTO, weatherData);
+			String[] weatherValues = weatherLine.split(",");
+			double dailyHighTemperature = Double.parseDouble(weatherValues[9]);
+			double dailyLowTemperature = Double.parseDouble(weatherValues[11]);
+			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
+			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_TORONTO, phuLocationList);
+			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
+			weatherNumber++;
+			weatherList.add(weather);
+		}
+		for(DateDimension date : dateList) {
+			String weatherLine = getWeatherLineFromDateAndLocation(2020, date.getMonth(), date.getDay(), REPORTING_PHU_CITY_OTTAWA, weatherData);
+			String[] weatherValues = weatherLine.split(",");
+			double dailyHighTemperature = Double.parseDouble(weatherValues[9]);
+			double dailyLowTemperature = Double.parseDouble(weatherValues[11]);
+			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
+			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_OTTAWA, phuLocationList);
+			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
+			weatherNumber++;
+			weatherList.add(weather);
+		}
+		return weatherList;
+	}
+	
+	
+	public ArrayList<Mobility> generateMobilityDimension(ArrayList<String> list , ArrayList<DateDimension> dateList, ArrayList<PhuLocation> phuLocationList){
+		ArrayList<Mobility> mobilityList = new ArrayList<Mobility>();
+		for (DateDimension date : dateList) {
+			String mobilityLine = getMobilityLineFromDateAndLocation(2020,date.getMonth(),date.getDay(),REPORTING_PHU_CITY_TORONTO,list);
+			String[] mobilityValues = mobilityLine.split(",");
+			String subRegion = mobilityValues[3];
+			String province = mobilityValues[2];
+			int retailAndRecreation = Integer.parseInt(mobilityValues[8]);
+			int groceryAndPharmacy = Integer.parseInt(mobilityValues[9]);
+			int parks = Integer.parseInt(mobilityValues[10]);
+			int transitStations = Integer.parseInt(mobilityValues[11]);
+			int workplaces = Integer.parseInt(mobilityValues[12]);
+			int residential = Integer.parseInt(mobilityValues[13]);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_TORONTO, phuLocationList);
+			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
+					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
+			mobilityNumber++;
+			mobilityList.add(mobility);
+		}
+		for (DateDimension date : dateList) {
+			String mobilityLine = getMobilityLineFromDateAndLocation(2020,date.getMonth(),date.getDay(),REPORTING_PHU_CITY_OTTAWA,list);
+			String[] mobilityValues = mobilityLine.split(",");
+			String subRegion = mobilityValues[3];
+			String province = mobilityValues[2];
+			int retailAndRecreation = Integer.parseInt(mobilityValues[8]);
+			int groceryAndPharmacy = Integer.parseInt(mobilityValues[9]);
+			int parks = Integer.parseInt(mobilityValues[10]);
+			int transitStations = Integer.parseInt(mobilityValues[11]);
+			int workplaces = Integer.parseInt(mobilityValues[12]);
+			int residential = Integer.parseInt(mobilityValues[13]);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_OTTAWA, phuLocationList);
+			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
+					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
+			mobilityNumber++;
+			mobilityList.add(mobility);
+		}
+		return mobilityList;
+	}
+
+	public ArrayList<DateDimension> generateDateDimension(){
+		ArrayList<DateDimension> dateList = new ArrayList<DateDimension>();
+		Calendar calendar = Calendar.getInstance();
+		calendar.set(2020, 1, 15);//the calendar object stores February as a 2 because it's bad
+		
+		for(int i = 0; i < 120; i++) {
+			calendar.getTimeInMillis();
+			int year = calendar.get(Calendar.YEAR);
+			int month = calendar.get(Calendar.MONTH) + 1;//case in point
+			int day = calendar.get(Calendar.DAY_OF_MONTH);
+			String dayOfWeek = getDayOfWeekFromEnumeration(calendar.get(Calendar.DAY_OF_WEEK));
+			boolean weekend = getWeekendFromDayOfWeek(dayOfWeek);
+			boolean holiday = getHolidayFromMonthAndDay(month, day);
+			String season = getSeasonFromMonth(month);
+			DateDimension date = new DateDimension(dateNumber, day, month, dayOfWeek, weekend, holiday,
+					season);
+			dateNumber++;
+			dateList.add(date);
+			//calendar.setTimeInMillis(calendar.getTimeInMillis() + 86400000);//increments by one day.
+			calendar.add(Calendar.DATE,1);
+		}
+		
+		
+		
+		return dateList;
+	}
+	
+	
+	public void uploadFact(Fact fact, Connection connection) throws SQLException {
+		String factQuery = "INSERT INTO fact (onset_date_key, reported_date_key, test_date_key, specimen_date_key, patient_key, phu_location_key, mobility_key, special_measures_key, weather_key, resolved, fatal, unresolved) ";
+		factQuery += "VALUES ("
+				+ Integer.toString(fact.onsetDateKey) + ", "
+				+ Integer.toString(fact.reportedDateKey) + ", "
+				+ Integer.toString(fact.testDateKey) + ", "
+				+ Integer.toString(fact.specimenDateKey) + ", "
+				+ Integer.toString(fact.patientKey) + ", "
+				+ Integer.toString(fact.phuLocationKey) + ", "
+				+ Integer.toString(fact.mobilityKey) + ", "
+				+ Integer.toString(fact.specialMeasuresKey) + ", "
+				+ Integer.toString(fact.weatherKey) + ", "
+				+ Boolean.toString(fact.resolved).toUpperCase() + ", "
+				+ Boolean.toString(fact.fatal).toUpperCase() + ", "
+				+ Boolean.toString(fact.unresolved).toUpperCase() + ");";
+		System.out.println(factQuery);
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(factQuery);
+	}
+	
+	public void uploadPatient(Patient patient, Connection connection) throws SQLException {
+		String patientQuery = "INSERT INTO patient_dimension (patient_key, acquisition_group, age_group, gender, outbreak_related) ";
+		patientQuery += "VALUES ("
+				+ Integer.toString(patient.getPatientKey()) + ", "
+				+ "'" + patient.getAcquisitionGroup() + "', "
+				+ "'" + patient.getAgeGroup() + "', "
+				+ "'" + patient.getGender() + "', "
+				+ Boolean.toString(patient.isOutBreakRelated()).toUpperCase() + ");";
+		System.out.println(patientQuery);
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(patientQuery);
+	}
+	
+	public void uploadWeather(Weather weather, Connection connection) throws SQLException {
+		String weatherQuery = "INSERT INTO weather_dimension (weather_key, date_key, location_key, daily_high_temperature, daily_low_temperature, precipitation) ";
+		weatherQuery += "VALUES ("
+				+ Integer.toString(weather.getWeatherKey()) + ", "
+				+ Integer.toString(weather.getDateKey()) + ", "
+				+ Integer.toString(weather.getLocationKey()) + ", "
+				+ Double.toString(weather.getDailyHighTemperature()) + ", "
+				+ Double.toString(weather.getDailyLowTemperature()) + ", "
+				+ Boolean.toString(weather.isPercipitation()).toUpperCase() + ");";
+		System.out.println(weatherQuery);
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(weatherQuery);
+	}
+	
+	public void uploadMobility(Mobility mobility, Connection connection) throws SQLException {
+		String mobilityQuery = "INSERT INTO mobility_dimension (mobility_key, date_key, location_key, sub_region, province, retail_and_recreation, grocery_and_pharmacy, parks, transit_stations, workplaces, residential) ";
+		mobilityQuery += "VALUES ("
+				+ Integer.toString(mobility.getMobilityKey()) + ", "
+				+ Integer.toString(mobility.getDateKey()) + ", "
+				+ Integer.toString(mobility.getLocationKey()) + ", "
+				+ "'" + mobility.getSubRegion() + "', "
+				+ "'" + mobility.getProvince() + "', "
+				+ Integer.toString(mobility.getRetailAndRecreation()) + ", "
+				+ Integer.toString(mobility.getGroceryAndPharmacy()) + ", "
+				+ Integer.toString(mobility.getParks()) + ", "
+				+ Integer.toString(mobility.getTransitStations()) + ", "
+				+ Integer.toString(mobility.getWorkplaces()) + ", "
+				+ Integer.toString(mobility.getResidential()) + ");";
+		System.out.println(mobilityQuery);
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(mobilityQuery);
+	}
+	
+	public void uploadPhuLocation(PhuLocation phuLocation, Connection connection) throws SQLException {
+		String phuLocationQuery = "INSERT INTO phu_location_dimension (phu_location_key, phu_name, address, city, postal_code, province, url, latitude, longitude) ";
+		phuLocationQuery += "VALUES ("
+				+ Integer.toString(phuLocation.getPhuLocationKey()) + ", "
+				+ "'" + phuLocation.getPhuName() + "', "
+				+ "'" + phuLocation.getAddress() + "', "
+				+ "'" + phuLocation.getCity() + "', "
+				+ "'" + phuLocation.getPostalCode() + "', "
+				+ "'" + phuLocation.getProvince() + "', "
+				+ "'" + phuLocation.getUrl() + "', "
+				+ Double.toString(phuLocation.getLatitude()) + ", "
+				+ Double.toString(phuLocation.getLongitude()) + ");";
+		System.out.println(phuLocationQuery);
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(phuLocationQuery);
+	}
+	
+	public void uploadDateDimension(DateDimension date, Connection connection) throws SQLException {
+		String dateDimensionQuery = "INSERT INTO date_dimension (date_key, day, month, day_of_week, weekend, holiday, season) ";
+		dateDimensionQuery += "VALUES ("
+				+ Integer.toString(date.getDateDimensionKey()) + ", "
+				+ Integer.toString(date.getDay()) + ", "
+				+ Integer.toString(date.getMonth()) + ", "
+				+ "'" + date.getDayOfWeek() + "', "
+				+ Boolean.toString(date.isWeekend()).toUpperCase() + ", "
+				+ Boolean.toString(date.isHoliday()).toLowerCase() + ", "
+				+ "'" + date.getSeason() + "');";
+		System.out.println(dateDimensionQuery);
+		Statement statement = connection.createStatement();
+		statement.executeUpdate(dateDimensionQuery);
 	}
 	
 	public int upload(Fact fact, Connection connection) throws SQLException {
@@ -162,7 +636,7 @@ public class DataUploader {
 		}
 		System.out.println(testDateQuery);
 		
-		String specimenDateQuery = "INSERT INTO specimen_date_dimension (test_date_key, day, month, day_of_week, weekend, holiday, season) ";
+		String specimenDateQuery = "INSERT INTO specimen_date_dimension (specimen_date_key, day, month, day_of_week, weekend, holiday, season) ";
 		if(fact.specimenDate != null) {
 			specimenDateQuery += "VALUES ("
 					+ Integer.toString(fact.specimenDate.getSpecimenDateKey()) + ", "
@@ -256,7 +730,6 @@ public class DataUploader {
 		System.out.println(specialMeasuresQuery);
 		
 		String factQuery = "INSERT INTO fact_table (onset_date_key, reported_date_key, test_date_key, specimen_date_key, patient_key, location_key, mobility_key, special_measures_key, weather_key, resolved, fatal, unresolved) ";
-		
 		factQuery += "VALUES ("
 				+ Integer.toString(fact.onsetDate.getOnsetDateKey()) + ", "
 				+ Integer.toString(fact.reportedDate.getReportedDateKey()) + ", "
@@ -272,19 +745,64 @@ public class DataUploader {
 				+ Boolean.toString(fact.unresolved).toUpperCase() + ");";
 		System.out.println(factQuery);
 		
-		if(totalNulls == 0) {
+		if (totalNulls == 0) {
 			Statement statement = connection.createStatement();
-			statement.executeQuery(reportedDateQuery);
-			statement.executeQuery(onsetDateQuery);
-			statement.executeQuery(testDateQuery);
-			statement.executeQuery(specimenDateQuery);
-			statement.executeQuery(weatherQuery);
-			statement.executeQuery(mobilityQuery);
-			statement.executeQuery(phuLocationQuery);
-			statement.executeQuery(patientQuery);
-			statement.executeQuery(specialMeasuresQuery);
-			statement.executeQuery(factQuery);
-			statement.close();
+			try {
+				statement.executeUpdate(reportedDateQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(onsetDateQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(testDateQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(specimenDateQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(weatherQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(mobilityQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(phuLocationQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(patientQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(specialMeasuresQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.executeUpdate(factQuery);
+			} catch (Exception e) {
+
+			}
+			try {
+				statement.close();
+			} catch (Exception e) {
+
+			}
+
 		}
 		
 		
@@ -376,6 +894,16 @@ public class DataUploader {
 		phuLocationKey++;
 		return phuLocation;
 	}
+	
+	private boolean inPhuLocationList(String patientDataLine, ArrayList<PhuLocation> phuLocationList) {
+		String[] line = patientDataLine.split(",");
+		for(PhuLocation phuLocation : phuLocationList) {
+			if(phuLocation.getAddress().equals(line[12])) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	private Mobility toMobility(String patientDataLine, ArrayList<String> mobilityData) {
 		String[] line = patientDataLine.split(",");
@@ -420,7 +948,7 @@ public class DataUploader {
 		return null;
 	}
 
-	private Weather toWeather(String patientDataLine, ArrayList<String> weatherData) {
+	private Weather toWeather(String patientDataLine, ArrayList<String> weatherData, ArrayList<PhuLocation> phuLocationList) {
 		String[] line = patientDataLine.split(",");
 		String[] dateValues = line[2].split("-");
 		int year = Integer.parseInt(dateValues[0]);
@@ -699,8 +1227,11 @@ public class DataUploader {
 			inputLine = inputPatient.readLine();// removes the header lines.
 			while ((inputLine = inputPatient.readLine()) != null) {
 				String[] data = inputLine.split(",");
-				if ((data[13].equals(REPORTING_PHU_CITY_OTTAWA) || data[13].equals(REPORTING_PHU_CITY_TORONTO))
+				if ((data[13].equals(REPORTING_PHU_CITY_OTTAWA) || data[14].equals(REPORTING_PHU_CITY_TORONTO))//the toronto phu has a comma
 						&& isInRange(inputLine)) {
+					if(data[14].equals(REPORTING_PHU_CITY_TORONTO)) {
+						inputLine = removeCommaFromAddress(inputLine);
+					}
 					patientData.add(inputLine);
 				}
 			}
@@ -711,6 +1242,19 @@ public class DataUploader {
 			e.printStackTrace();
 		}
 		return patientData;
+	}
+	
+	private String removeCommaFromAddress(String patientLine) {
+		String[] line = patientLine.split(",");
+		String output = line[0];
+		for(int i = 1; i < line.length; i++) {
+			if(i==13) {
+				output += line[i];
+			}else {
+				output += "," + line[i];
+			}
+		}
+		return removeQuotations(output);
 	}
 
 	private boolean isInRange(String patientDataLine) {

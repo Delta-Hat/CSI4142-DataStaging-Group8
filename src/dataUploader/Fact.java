@@ -13,6 +13,15 @@ public class Fact {
 	boolean resolved;
 	boolean unresolved;
 	boolean fatal;
+	int onsetDateKey;
+	int reportedDateKey;
+	int testDateKey;
+	int specimenDateKey;
+	int patientKey;
+	int phuLocationKey;
+	int mobilityKey;
+	int specialMeasuresKey;
+	int weatherKey;
 
 	public Fact() {
 
