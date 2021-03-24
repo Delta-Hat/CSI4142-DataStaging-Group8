@@ -27,6 +27,10 @@ public class DataUploader {
 	final static String COVID_PATIENT_FILE = "conposcovidloc.csv";
 	final static String TORONTO_WEATHER_FILE = "en_climate_daily_ON_6158355_2020_P1D.csv";
 	final static String OTTAWA_WEATHER_FILE = "en_climate_daily_ON_6105978_2020_P1D.csv";
+	final static String DURHAM_WEATHER_FILE = "en_climate_daily_ON_6155875_2020_P1D.csv";//Oshawa weather report
+	final static String HALTON_WEATHER_FILE = "en_climate_daily_ON_6155750_2020_P1D.csv";//Oakvill weather report
+	final static String PEEL_WEATHER_FILE = "en_climate_daily_ON_6158731_2020_P1D.csv";//Toronto Pearson airport is in mississauga.
+	final static String YORK_WEATHER_FILE = "en_climate_daily_ON_6154150_2020_P1D.csv";//King city north
 	final static String MOBILITY_DATA_FILE = "2020_CA_Region_Mobility_Report.csv";
 	final static String MOBILITY_TORONTO = "Toronto Division";
 	final static String MOBILITY_OTTAWA = "Ottawa Division";
@@ -36,8 +40,17 @@ public class DataUploader {
 	final static String MOBILITY_YORK = "Regional Municipality of York";
 	final static String WEATHER_TORONTO = "TORONTO CITY";
 	final static String WEATHER_OTTAWA = "OTTAWA CDA RCS";
+	final static String WEATHER_DURHAM = "OSHAWA";
+	final static String WEATHER_HALTON = "OAKVILLE TWN";
+	final static String WEATHER_PEEL = "TORONTO INTL A";
+	final static String WEATHER_YORK = "KING CITY NORTH";
 	final static String REPORTING_PHU_CITY_TORONTO = "Toronto";
 	final static String REPORTING_PHU_CITY_OTTAWA = "Ottawa";
+	final static String REPORTING_PHU_CITY_DURHAM = "Whitby";
+	final static String REPORTING_PHU_CITY_HALTON = "Oakville";
+	final static String REPORTING_PHU_CITY_PEEL = "Mississauga";
+	final static String REPORTING_PHU_CITY_YORK = "Newmarket";
+	//change these if you want to test this out on a new database.
 	final static String HOST = "www.eecs.uottawa.ca";
 	final static String PORT = "15432";
 	final static String DATABASE = "group_8";
@@ -68,11 +81,19 @@ public class DataUploader {
 		   System.out.println(line);
 		}
 
-		ArrayList<String> weatherData = getWeatherData();
-		
-		ArrayList<String> patientData = getPatientData();
+		ArrayList<String> weatherData = getWeatherData();	
 
 		weatherData = cleanseWeatherData(weatherData);
+		
+		for(String weatherLine : weatherData) {
+			System.out.println(weatherLine);
+		}
+		
+		ArrayList<String> patientData = getPatientData();
+		
+		for(String patientLine : patientData) {
+			System.out.println(patientLine);
+		}
 		
 		ArrayList<DateDimension> dateDimensionList = generateDateDimension();
 		for(DateDimension dateDimension : dateDimensionList) {
@@ -109,8 +130,8 @@ public class DataUploader {
 			try {
 				uploadDateDimension(dateDimension,connection);
 			}catch(SQLException e) {
-				e.printStackTrace();
-				System.exit(0);
+				System.out.println(e);
+				System.out.println("Skipping entry...");
 			}
 		}
 		
@@ -118,8 +139,8 @@ public class DataUploader {
 			try {
 				uploadPhuLocation(phuLocation,connection);	
 			}catch(SQLException e) {
-				e.printStackTrace();
-				System.exit(0);
+				System.out.println(e);
+				System.out.println("Skipping entry...");
 			}
 		}
 		
@@ -127,8 +148,8 @@ public class DataUploader {
 			try {
 				uploadMobility(mobility,connection);
 			}catch(SQLException e) {
-				e.printStackTrace();
-				System.exit(0);
+				System.out.println(e);
+				System.out.println("Skipping entry...");
 			}
 		}
 		
@@ -136,8 +157,8 @@ public class DataUploader {
 			try {
 				uploadWeather(weather,connection);
 			}catch(SQLException e) {
-				e.printStackTrace();
-				System.exit(0);
+				System.out.println(e);
+				System.out.println("Skipping entry...");
 			}
 		}
 		
@@ -145,19 +166,25 @@ public class DataUploader {
 			try {
 				uploadPatient(patient,connection);
 			}catch(SQLException e) {
-				e.printStackTrace();
-				System.exit(0);
+				System.out.println(e);
+				System.out.println("Skipping entry...");
 			}
 		}
 		
+		
+		//I've commented this out because if this is run a second time, it will break the fact table.
+		//Only run this if the fact table is empty.
+		//Please.
+		/*
 		for(Fact fact : factList) {
 			try {
 				uploadFact(fact,connection);
 			}catch(SQLException e) {
-				e.printStackTrace();
-				System.exit(0);
+				System.out.println(e);
+				System.out.println("Skipping entry...");
 			}
 		}
+		*/
 		
 		
 		connection.close();
@@ -165,6 +192,8 @@ public class DataUploader {
 			e.printStackTrace();
 			System.exit(0);
 		}
+		
+			
 		//ArrayList<Patient> patientList = generatePatientDimension(patientData);
 		//for(Patient patient : patientList) {
 		//	System.out.println(patient);
@@ -323,7 +352,7 @@ public class DataUploader {
 			fact.weatherKey = weatherKey;
 			fact.patientKey = patientKey;
 			fact.mobilityKey = mobilityKey;
-			fact.specialMeasuresKey = 0;
+			fact.specialMeasuresKey = specialMeasuresKey;
 			System.out.println("" + onsetDateKey + "," + reportedDateKey + "," + testDateKey + "," + specimenDateKey + "," + phuLocationKey + "," + weatherKey + "," + patientKey + "," + mobilityKey);
 			recordedPatients++;
 			factList.add(fact);
@@ -389,10 +418,12 @@ public class DataUploader {
 	public ArrayList<PhuLocation> generatePhuLocationDimension(ArrayList<String> patientData){
 		ArrayList<PhuLocation> phuLocationList = new ArrayList<PhuLocation>();
 		for(String patientLine : patientData) {
+			
 			if(!inPhuLocationList(patientLine, phuLocationList)) {
 				phuLocationList.add(toPhuLocation(patientLine));
 			}
 		}
+		
 		return phuLocationList;
 	}
 	
@@ -418,6 +449,54 @@ public class DataUploader {
 			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
 			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
 			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_OTTAWA, phuLocationList);
+			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
+			weatherNumber++;
+			weatherList.add(weather);
+		}
+		for(DateDimension date : dateList) {
+			String weatherLine = getWeatherLineFromDateAndLocation(2020, date.getMonth(), date.getDay(), REPORTING_PHU_CITY_DURHAM, weatherData);
+			String[] weatherValues = weatherLine.split(",");
+			double dailyHighTemperature = Double.parseDouble(weatherValues[9]);
+			double dailyLowTemperature = Double.parseDouble(weatherValues[11]);
+			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
+			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_DURHAM, phuLocationList);
+			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
+			weatherNumber++;
+			weatherList.add(weather);
+		}
+		for(DateDimension date : dateList) {
+			String weatherLine = getWeatherLineFromDateAndLocation(2020, date.getMonth(), date.getDay(), REPORTING_PHU_CITY_HALTON, weatherData);
+			String[] weatherValues = weatherLine.split(",");
+			double dailyHighTemperature = Double.parseDouble(weatherValues[9]);
+			double dailyLowTemperature = Double.parseDouble(weatherValues[11]);
+			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
+			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_HALTON, phuLocationList);
+			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
+			weatherNumber++;
+			weatherList.add(weather);
+		}
+		for(DateDimension date : dateList) {
+			String weatherLine = getWeatherLineFromDateAndLocation(2020, date.getMonth(), date.getDay(), REPORTING_PHU_CITY_PEEL, weatherData);
+			String[] weatherValues = weatherLine.split(",");
+			double dailyHighTemperature = Double.parseDouble(weatherValues[9]);
+			double dailyLowTemperature = Double.parseDouble(weatherValues[11]);
+			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
+			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_PEEL, phuLocationList);
+			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
+			weatherNumber++;
+			weatherList.add(weather);
+		}
+		for(DateDimension date : dateList) {
+			String weatherLine = getWeatherLineFromDateAndLocation(2020, date.getMonth(), date.getDay(), REPORTING_PHU_CITY_YORK, weatherData);
+			String[] weatherValues = weatherLine.split(",");
+			double dailyHighTemperature = Double.parseDouble(weatherValues[9]);
+			double dailyLowTemperature = Double.parseDouble(weatherValues[11]);
+			boolean percipitation = !(0 == Double.parseDouble(weatherValues[23]));
+			int dateKey = getDateIndex(date.getMonth(), date.getDay(), dateList);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_YORK, phuLocationList);
 			Weather weather = new Weather(weatherNumber, dailyHighTemperature, dailyLowTemperature, percipitation,dateKey,locationKey);
 			weatherNumber++;
 			weatherList.add(weather);
@@ -457,6 +536,74 @@ public class DataUploader {
 			int workplaces = Integer.parseInt(mobilityValues[12]);
 			int residential = Integer.parseInt(mobilityValues[13]);
 			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_OTTAWA, phuLocationList);
+			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
+					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
+			mobilityNumber++;
+			mobilityList.add(mobility);
+		}
+		for (DateDimension date : dateList) {
+			String mobilityLine = getMobilityLineFromDateAndLocation(2020,date.getMonth(),date.getDay(),REPORTING_PHU_CITY_DURHAM,list);
+			String[] mobilityValues = mobilityLine.split(",");
+			String subRegion = mobilityValues[3];
+			String province = mobilityValues[2];
+			int retailAndRecreation = Integer.parseInt(mobilityValues[8]);
+			int groceryAndPharmacy = Integer.parseInt(mobilityValues[9]);
+			int parks = Integer.parseInt(mobilityValues[10]);
+			int transitStations = Integer.parseInt(mobilityValues[11]);
+			int workplaces = Integer.parseInt(mobilityValues[12]);
+			int residential = Integer.parseInt(mobilityValues[13]);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_DURHAM, phuLocationList);
+			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
+					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
+			mobilityNumber++;
+			mobilityList.add(mobility);
+		}
+		for (DateDimension date : dateList) {
+			String mobilityLine = getMobilityLineFromDateAndLocation(2020,date.getMonth(),date.getDay(),REPORTING_PHU_CITY_HALTON,list);
+			String[] mobilityValues = mobilityLine.split(",");
+			String subRegion = mobilityValues[3];
+			String province = mobilityValues[2];
+			int retailAndRecreation = Integer.parseInt(mobilityValues[8]);
+			int groceryAndPharmacy = Integer.parseInt(mobilityValues[9]);
+			int parks = Integer.parseInt(mobilityValues[10]);
+			int transitStations = Integer.parseInt(mobilityValues[11]);
+			int workplaces = Integer.parseInt(mobilityValues[12]);
+			int residential = Integer.parseInt(mobilityValues[13]);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_HALTON, phuLocationList);
+			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
+					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
+			mobilityNumber++;
+			mobilityList.add(mobility);
+		}
+		for (DateDimension date : dateList) {
+			String mobilityLine = getMobilityLineFromDateAndLocation(2020,date.getMonth(),date.getDay(),REPORTING_PHU_CITY_PEEL,list);
+			String[] mobilityValues = mobilityLine.split(",");
+			String subRegion = mobilityValues[3];
+			String province = mobilityValues[2];
+			int retailAndRecreation = Integer.parseInt(mobilityValues[8]);
+			int groceryAndPharmacy = Integer.parseInt(mobilityValues[9]);
+			int parks = Integer.parseInt(mobilityValues[10]);
+			int transitStations = Integer.parseInt(mobilityValues[11]);
+			int workplaces = Integer.parseInt(mobilityValues[12]);
+			int residential = Integer.parseInt(mobilityValues[13]);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_PEEL, phuLocationList);
+			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
+					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
+			mobilityNumber++;
+			mobilityList.add(mobility);
+		}
+		for (DateDimension date : dateList) {
+			String mobilityLine = getMobilityLineFromDateAndLocation(2020,date.getMonth(),date.getDay(),REPORTING_PHU_CITY_YORK,list);
+			String[] mobilityValues = mobilityLine.split(",");
+			String subRegion = mobilityValues[3];
+			String province = mobilityValues[2];
+			int retailAndRecreation = Integer.parseInt(mobilityValues[8]);
+			int groceryAndPharmacy = Integer.parseInt(mobilityValues[9]);
+			int parks = Integer.parseInt(mobilityValues[10]);
+			int transitStations = Integer.parseInt(mobilityValues[11]);
+			int workplaces = Integer.parseInt(mobilityValues[12]);
+			int residential = Integer.parseInt(mobilityValues[13]);
+			int locationKey = getPhuLocationIndex(REPORTING_PHU_CITY_YORK, phuLocationList);
 			Mobility mobility = new Mobility(mobilityNumber, subRegion, province, retailAndRecreation, groceryAndPharmacy,
 					parks, transitStations, workplaces, residential, date.getDateDimensionKey(), locationKey);
 			mobilityNumber++;
@@ -944,8 +1091,12 @@ public class DataUploader {
 			int mMonth = Integer.parseInt(date[1]);
 			int mDay = Integer.parseInt(date[2]);
 			if (((reportingCity.equals(REPORTING_PHU_CITY_TORONTO) && line[3].equals(MOBILITY_TORONTO))
-					|| (reportingCity.equals(REPORTING_PHU_CITY_OTTAWA) && line[3].equals(MOBILITY_OTTAWA)))
-					&& (year == mYear && month == mMonth && day == mDay)) {
+					|| (reportingCity.equals(REPORTING_PHU_CITY_OTTAWA) && line[3].equals(MOBILITY_OTTAWA))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_DURHAM) && line[3].equals(MOBILITY_DURHAM))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_HALTON) && line[3].equals(MOBILITY_HALTON))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_PEEL) && line[3].equals(MOBILITY_PEEL))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_YORK) && line[3].equals(MOBILITY_YORK))
+					) && (year == mYear && month == mMonth && day == mDay)) {
 				return mobilityData.get(i);
 			}
 		}
@@ -981,7 +1132,12 @@ public class DataUploader {
 			int wMonth = Integer.parseInt(weatherValues[6]);
 			int wDay = Integer.parseInt(weatherValues[7]);
 			if (((reportingCity.equals(REPORTING_PHU_CITY_TORONTO) && weatherValues[2].equals(WEATHER_TORONTO))
-					|| (reportingCity.equals(REPORTING_PHU_CITY_OTTAWA) && weatherValues[2].equals(WEATHER_OTTAWA)))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_OTTAWA) && weatherValues[2].equals(WEATHER_OTTAWA))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_DURHAM) && weatherValues[2].equals(WEATHER_DURHAM))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_HALTON) && weatherValues[2].equals(WEATHER_HALTON))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_PEEL) && weatherValues[2].equals(WEATHER_PEEL))
+					|| (reportingCity.equals(REPORTING_PHU_CITY_YORK) && weatherValues[2].equals(WEATHER_YORK))
+					)
 					&& (year == wYear && month == wMonth && day == wDay)) {
 				return weatherData.get(i);
 			}
@@ -1225,12 +1381,16 @@ public class DataUploader {
 	 */
 	private ArrayList<String> getPatientData() {
 		ArrayList<String> patientData = new ArrayList<String>();
+		ArrayList<String> cityList = new ArrayList<String>();
 		String inputLine;
 		try {
 			BufferedReader inputPatient = new BufferedReader(new FileReader(COVID_PATIENT_FILE));
 			inputLine = inputPatient.readLine();// removes the header lines.
 			while ((inputLine = inputPatient.readLine()) != null) {
 				String[] data = inputLine.split(",");
+				if(!cityList.contains(data[13])) {
+					cityList.add(data[13]);
+				}
 				if ((data[13].equals(REPORTING_PHU_CITY_OTTAWA) || data[14].equals(REPORTING_PHU_CITY_TORONTO))//the toronto phu has a comma
 						&& isInRange(inputLine)) {
 					if(data[14].equals(REPORTING_PHU_CITY_TORONTO)) {
@@ -1244,6 +1404,31 @@ public class DataUploader {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+		//Same case here. We append to the existing order.
+		//Were this a permanent operation, we would create a system for checking if data is already in the
+		//staging area and append to that.
+		try {
+			BufferedReader inputPatient = new BufferedReader(new FileReader(COVID_PATIENT_FILE));
+			inputLine = inputPatient.readLine();// removes the header lines.
+			while ((inputLine = inputPatient.readLine()) != null) {
+				String[] data = inputLine.split(",");
+				if(!cityList.contains(data[13])) {
+					cityList.add(data[13]);
+				}
+				if ((data[13].equals(REPORTING_PHU_CITY_DURHAM) || data[13].equals(REPORTING_PHU_CITY_HALTON) || data[13].equals(REPORTING_PHU_CITY_PEEL) || data[13].equals(REPORTING_PHU_CITY_YORK))//the toronto phu has a comma
+						&& isInRange(inputLine)) {
+					patientData.add(inputLine);
+				}
+			}
+			inputPatient.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		for(String city : cityList) {
+			System.out.println(city);
 		}
 		return patientData;
 	}
@@ -1371,6 +1556,58 @@ public class DataUploader {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		try {
+			BufferedReader inputMobile = new BufferedReader(new FileReader(DURHAM_WEATHER_FILE));
+			inputLine = inputMobile.readLine();
+			while ((inputLine = inputMobile.readLine()) != null) {
+				inputLine = removeQuotations(inputLine);
+				weatherData.add(inputLine);
+			}
+			inputMobile.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			BufferedReader inputMobile = new BufferedReader(new FileReader(HALTON_WEATHER_FILE));
+			inputLine = inputMobile.readLine();
+			while ((inputLine = inputMobile.readLine()) != null) {
+				inputLine = removeQuotations(inputLine);
+				weatherData.add(inputLine);
+			}
+			inputMobile.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			BufferedReader inputMobile = new BufferedReader(new FileReader(PEEL_WEATHER_FILE));
+			inputLine = inputMobile.readLine();
+			while ((inputLine = inputMobile.readLine()) != null) {
+				inputLine = removeQuotations(inputLine);
+				weatherData.add(inputLine);
+			}
+			inputMobile.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		try {
+			BufferedReader inputMobile = new BufferedReader(new FileReader(YORK_WEATHER_FILE));
+			inputLine = inputMobile.readLine();
+			while ((inputLine = inputMobile.readLine()) != null) {
+				inputLine = removeQuotations(inputLine);
+				weatherData.add(inputLine);
+			}
+			inputMobile.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return weatherData;
 	}
 
@@ -1413,9 +1650,26 @@ public class DataUploader {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		//You might be asking why we do this twice. 
+		//As of writing this, the data for Toronto and Ottawa have already been uploaded.
+		//Creating the list like this ensures the data will be uploaded in the same order.
+		try {
+			BufferedReader inputMobile = new BufferedReader(new FileReader(MOBILITY_DATA_FILE));
+			while ((inputLine = inputMobile.readLine()) != null) {
+				String[] data = inputLine.split(",");
+				if (data[3].equals(MOBILITY_DURHAM) || data[3].equals(MOBILITY_HALTON) || data[3].equals(MOBILITY_PEEL) || data[3].equals(MOBILITY_YORK)) {
+					mobilityData.add(inputLine);
+				}
+			}
+			inputMobile.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return mobilityData;
 	}
-
+//
 	public DataUploader() {
 
 	}
