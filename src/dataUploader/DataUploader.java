@@ -30,6 +30,10 @@ public class DataUploader {
 	final static String MOBILITY_DATA_FILE = "2020_CA_Region_Mobility_Report.csv";
 	final static String MOBILITY_TORONTO = "Toronto Division";
 	final static String MOBILITY_OTTAWA = "Ottawa Division";
+	final static String MOBILITY_DURHAM = "Regional Municipality of Durham";
+	final static String MOBILITY_HALTON = "Regional Municipality of Halton";
+	final static String MOBILITY_PEEL = "Regional Municipality of Peel";
+	final static String MOBILITY_YORK = "Regional Municipality of York";
 	final static String WEATHER_TORONTO = "TORONTO CITY";
 	final static String WEATHER_OTTAWA = "OTTAWA CDA RCS";
 	final static String REPORTING_PHU_CITY_TORONTO = "Toronto";
